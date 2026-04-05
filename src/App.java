@@ -12,13 +12,13 @@ public class App implements Runnable {
     private volatile boolean stop = false;
     private static Scanner sc = new Scanner(System.in);
     private static List<Inventory> inventoryList = new ArrayList<>();
-    private static UserData[] accounts = {
-            new UserData("alice", "pass1"),
-            new UserData("bob", "pass2"),
-            new UserData("charlie", "pass3"),
-            new UserData("diana", "pass4"),
-            new UserData("eve", "pass5")
-    };
+    private static List<UserData> accounts = new ArrayList<>(List.of(
+            new UserData("alice", "pass1", "Manager"),
+            new UserData("bob", "pass2", "Staff"),
+            new UserData("charlie", "pass3", "Staff"),
+            new UserData("diana", "pass4", "Supervisor"),
+            new UserData("eve", "pass5", "Admin")
+    ));
 
     @Override
     public void run() {
@@ -39,10 +39,12 @@ public class App implements Runnable {
     static class UserData {
         String username;
         String password;
+        String position;
 
-        public UserData(String username, String password) {
+        public UserData(String username, String password, String position) {
             this.username = username;
             this.password = password;
+            this.position = position;
         }
     }
 
@@ -74,38 +76,84 @@ public class App implements Runnable {
         while (true) {
             System.out.println("Welcome to the Inventory System!");
             Thread.sleep(500);
-            System.out.println("\nPlease login to continue (or type 'exit' to quit)");
+            System.out.println("\n1. Login");
+            System.out.println("2. Register");
+            System.out.println("3. Exit");
+            System.out.print("Choice: ");
+            String choice = sc.nextLine();
 
-            System.out.print("Username: ");
-            String inputUsername = sc.nextLine();
-            if (inputUsername.equalsIgnoreCase("exit"))
-                break;
+            if (choice.equals("1")) {
+                System.out.print("Username: ");
+                String inputUsername = sc.nextLine();
 
-            System.out.print("Password: ");
-            App masker = new App();
-            Thread thread = new Thread(masker);
-            thread.start();
-            String inputPassword = sc.nextLine();
-            masker.stopMasking();
-            thread.join();
+                System.out.print("Password: ");
+                App masker = new App();
+                Thread thread = new Thread(masker);
+                thread.start();
+                String inputPassword = sc.nextLine();
+                masker.stopMasking();
+                thread.join();
 
-            boolean authenticated = false;
-            for (UserData account : accounts) {
-                if (inputUsername.toLowerCase().equals(account.username) && inputPassword.equals(account.password)) {
-                    authenticated = true;
-                    break;
+                boolean authenticated = false;
+                for (UserData account : accounts) {
+                    if (inputUsername.toLowerCase().equals(account.username)
+                            && inputPassword.equals(account.password)) {
+                        authenticated = true;
+                        break;
+                    }
                 }
-            }
 
-            if (authenticated) {
-                System.out.println("\nLogin successful!");
-                MainMenu();
+                if (authenticated) {
+                    System.out.println("\nLogin successful!");
+                    MainMenu();
+                } else {
+                    System.out.println("\nInvalid username or password.");
+                    Thread.sleep(1000);
+                }
+            } else if (choice.equals("2")) {
+                registerUser();
+            } else if (choice.equals("3")) {
+                break;
             } else {
-                System.out.println("\nInvalid username or password.");
-                Thread.sleep(1000);
+                System.out.println("Invalid choice.");
             }
         }
         System.out.println("Goodbye!");
+    }
+
+    public static void registerUser() {
+        System.out.println("\n--- Register New User ---");
+        System.out.print("Enter username: ");
+        String username = sc.nextLine().trim().toLowerCase();
+
+        if (username.isEmpty()) {
+            System.out.println("Error: Username cannot be empty.");
+            return;
+        }
+
+        // Check if user already exists
+        for (UserData acc : accounts) {
+            if (acc.username.equals(username)) {
+                System.out.println("Error: Username already exists.");
+                return;
+            }
+        }
+
+        System.out.print("Enter password: ");
+        String password = sc.nextLine().trim();
+        if (password.isEmpty()) {
+            System.out.println("Error: Password cannot be empty.");
+            return;
+        }
+
+        System.out.print("Enter position: ");
+        String position = sc.nextLine().trim();
+        if (position.isEmpty())
+            position = "Staff";
+
+        accounts.add(new UserData(username, password, position));
+        System.out.println("User registered successfully!");
+        saveDataToExcel();
     }
 
     public static void MainMenu() {
@@ -240,11 +288,14 @@ public class App implements Runnable {
             Row userHeader = userSheet.createRow(0);
             userHeader.createCell(0).setCellValue("Username");
             userHeader.createCell(1).setCellValue("Password");
+            userHeader.createCell(2).setCellValue("Position");
 
-            for (int i = 0; i < accounts.length; i++) {
+            for (int i = 0; i < accounts.size(); i++) {
                 Row row = userSheet.createRow(i + 1);
-                row.createCell(0).setCellValue(accounts[i].username);
-                row.createCell(1).setCellValue(accounts[i].password);
+                UserData acc = accounts.get(i);
+                row.createCell(0).setCellValue(acc.username);
+                row.createCell(1).setCellValue(acc.password);
+                row.createCell(2).setCellValue(acc.position);
             }
 
             try (FileOutputStream fileOut = new FileOutputStream("MyData.xlsx")) {
@@ -290,13 +341,14 @@ public class App implements Runnable {
                         try {
                             String user = row.getCell(0).getStringCellValue();
                             String pass = row.getCell(1).getStringCellValue();
-                            loadedUsers.add(new UserData(user, pass));
+                            String pos = (row.getCell(2) != null) ? row.getCell(2).getStringCellValue() : "Staff";
+                            loadedUsers.add(new UserData(user, pass, pos));
                         } catch (Exception e) {
                         }
                     }
                 }
                 if (!loadedUsers.isEmpty()) {
-                    accounts = loadedUsers.toArray(new UserData[0]);
+                    accounts = loadedUsers;
                 }
             }
             return true;

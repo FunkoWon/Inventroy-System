@@ -9,12 +9,14 @@ The main purpose of this project is to provide a lightweight tool for managing s
 ## Features
 
 - **User Authentication**: Secure login system with masked password input.
+- **User Registration**: New users can create accounts with a custom `username`, password, and position.
+- **Position Tracking**: Each user is assigned a role (e.g., Manager, Staff, Admin) stored in the database.
 - **Inventory Management**:
   - **Add Items**: Register new products with name, quantity, and price.
   - **View Items**: Display all current stock in a formatted table.
   - **Update Items**: Modify quantity and price of existing stock.
   - **Remove Items**: Delete products from the database.
-- **Data Persistence**: Automatically synchronizes data with an Excel spreadsheet (`MyData.xlsx`).
+- **Data Persistence**: Automatically synchronizes both user accounts and inventory data with an Excel spreadsheet (`MyData.xlsx`).
 - **Data Recovery**: Automatically loads previous inventory data on startup.
 
 ## Technologies Used
@@ -53,10 +55,12 @@ Before running the application, ensure you have the following installed:
 ## How to Use
 
 1.  **Launch**: Run the application as described above.
-2.  **Login**: Use the default credentials or those found in `MyData.xlsx`.
+2.  **Initial Choice**: Choose whether to **Login (1)** or **Register (2)**.
+3.  **Registration**: New users can sign up by providing their desired username, password, and position.
+4.  **Login**: Use the default credentials or your newly created account.
     - **Default Usernames**: `alice`, `bob`, `charlie`, `diana`, `eve`
     - **Default Password Example**: `pass1` (for alice), `pass2` (for bob), etc.
-3.  **Main Menu**: Navigate through the numbered options:
+5.  **Main Menu**: After login, navigate through the numbered options:
     - `1` to add an item.
     - `2` to remove an item.
     - `3` to update stock.
